@@ -28,6 +28,13 @@ import napalm_base.constants as c
 from napalm_base import validate
 
 
+import napalm_yang
+
+import yaml
+
+import re
+
+
 class NetworkDriver(object):
 
     def __init__(self, hostname, username, password, timeout=60, optional_args=None):
@@ -1499,3 +1506,55 @@ class NetworkDriver(object):
         report file. See https://napalm.readthedocs.io/en/latest/validate.html.
         """
         return validate.compliance_report(self, validation_file=validation_file)
+
+    def _oc_all_config(self):
+        raise NotImplementedError
+
+    def oc_populate_interfaces(self):
+        self.interfaces = napalm_yang.oc_if.Interfaces().interfaces
+
+        with open("napalm_eos/openconfig_mappings.yaml", "r") as f:
+            oc_mappings = yaml.load(f.read())
+
+        config = self._oc_all_config()
+
+        self._oc_parse_text(self.interfaces, config, oc_mappings["interfaces"])
+
+    def _oc_parse_text(self, model, config, mappings):
+        for k, v in model.items():
+            if issubclass(v.__class__, napalm_yang.List):
+                self._oc_parse_text_to_list(v, config, mappings[k])
+            elif k == "state":
+                continue
+            elif issubclass(v.__class__, napalm_yang.BaseBinding):
+                self._oc_parse_text(v, config, mappings[k])
+            else:
+                self._oc_parse_text_to_attr(v, config, mappings[k])
+
+    def _oc_parse_text_to_list(self, model, config, mappings):
+        block_matches = re.finditer(mappings["_block_capture"], config, re.MULTILINE)
+
+        for match in block_matches:
+            name = match.group("key")
+            obj = model.get_element(name)
+            self._oc_parse_text(obj, config, mappings)
+
+    def _oc_parse_text_to_attr(self, attr, config, mappings):
+        match = re.search(mappings["_search"], config, re.MULTILINE)
+
+        if mappings["_type"] == "boolean":
+            attr(match is not None)
+            return
+
+        if match:
+            if mappings["_type"] == "mapping":
+                value = mappings["_map"][match.group("value")]
+            else:
+                value = match.group("value")
+        else:
+            value = mappings["_default"]
+
+        try:
+            attr(value)
+        except ValueError:
+            attr(eval(value))
