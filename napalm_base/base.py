@@ -1518,26 +1518,35 @@ class NetworkDriver(object):
 
         config = self._oc_all_config()
 
-        self._oc_parse_text(self.interfaces, config, oc_mappings["interfaces"])
+        self._oc_parse_text(self.interfaces, config, config, oc_mappings["interfaces"])
 
-    def _oc_parse_text(self, model, config, mappings):
+    def _oc_parse_text(self, model, config, partial_config, mappings):
         for k, v in model.items():
             if issubclass(v.__class__, napalm_yang.List):
                 self._oc_parse_text_to_list(v, config, mappings[k])
             elif k == "state":
                 continue
             elif issubclass(v.__class__, napalm_yang.BaseBinding):
-                self._oc_parse_text(v, config, mappings[k])
+                self._oc_parse_text(v, config, partial_config, mappings[k])
             else:
-                self._oc_parse_text_to_attr(v, config, mappings[k])
+                self._oc_parse_text_to_attr(v, partial_config, mappings[k])
 
     def _oc_parse_text_to_list(self, model, config, mappings):
         block_matches = re.finditer(mappings["_block_capture"], config, re.MULTILINE)
 
         for match in block_matches:
             name = match.group("key")
-            obj = model.get_element(name)
-            self._oc_parse_text(obj, config, mappings)
+            block_config = match.group("block")
+
+            if "_parent_key" in mappings.keys():
+                parent_key = re.search(mappings["_parent_key"], block_config,
+                                       re.MULTILINE).group("parent")
+                path = mappings["_path"].format(parent_key, name)
+                obj = eval("self.{}".format(path))
+            else:
+                obj = model.get_element(name)
+
+            self._oc_parse_text(obj, config, block_config, mappings)
 
     def _oc_parse_text_to_attr(self, attr, config, mappings):
         match = re.search(mappings["_search"], config, re.MULTILINE)
