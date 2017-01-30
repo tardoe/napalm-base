@@ -1,7 +1,11 @@
 ---
 complies: true
-skipped: []
-get_bgp_neighbors:
+method_not_implemented:
+    reason: NotImplemented
+    skipped: true
+skipped:
+    - method_not_implemented
+check_bgp_neighbors_have_prefixes:
   complies: true
   extra: []
   missing: []
@@ -15,21 +19,9 @@ get_facts:
     hostname: {complies: true, nested: false}
     interface_list: {complies: true, nested: true}
     os_version: {complies: true, nested: false}
-get_route_to:
-  complies: true
-  extra: []
-  missing: []
-  present:
-    10.155.180.192/26: {complies: true, nested: true}
 get_interfaces_ip:
   complies: true
   extra: []
   missing: []
   present:
     Ethernet2/1: {complies: true, nested: true}
-ping:
-  complies: true
-  extra: []
-  missing: []
-  present:
-    success: {complies: true, nested: true}
