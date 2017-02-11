@@ -27,12 +27,26 @@ class TextTranslator:
                         continue
                     translation += self._translate_yang_model(getattr(obj, k), translation_map[k],
                                                               previous_v, key, parent_key)
-                translation += self._yang_translate_string(translation_map[k].get("_string", ""),
+
+                value = getattr(obj, k)
+                p_value = getattr(previous, k) if previous else None
+                if previous and value == p_value:
+                    # If we have a previous element and their values are equal
+                    # let's skip this as we are merging
+                    continue
+
+                if not value:
+                    string = translation_map[k].get("_remove", "")
+                else:
+                    string = translation_map[k].get("_string", "")
+
+                translation += self._yang_translate_string(string,
                                                            value=getattr(obj, k), key=key,
                                                            parent_key=parent_key)
                 translation += self._yang_translate_map(translation_map[k].get("_map", {}),
                                                         value=getattr(obj, k), key=key,
                                                         parent_key=parent_key)
+
         return translation
 
     def _yang_translate_list(self, l, translation_map, previous, parent_key):
