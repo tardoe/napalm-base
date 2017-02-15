@@ -16,9 +16,9 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-class FileCopy(object):
+class BaseFileCopy(object):
 
-    def __init__(self):
+    def __init__(self, ctl_chan, source_file, dest_file, direction='put', file_system=None):
         raise NotImplementedError
 
     def __enter__(self):

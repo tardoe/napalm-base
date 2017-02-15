@@ -36,7 +36,6 @@ except AttributeError:
 from napalm_base.base import NetworkDriver
 from napalm_base.exceptions import ModuleImportError
 from napalm_base.utils import py23_compat
-from napalm_base.file_copy import FileCopy
 
 try:
     __version__ = pkg_resources.get_distribution('napalm-base').version
@@ -47,7 +46,6 @@ except pkg_resources.DistributionNotFound:
 __all__ = [
     'get_network_driver',  # export the function
     'NetworkDriver',       # also export the base class
-    'FileCopy',
 ]
 
 
