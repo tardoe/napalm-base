@@ -59,3 +59,7 @@ class TemplateRenderException(Exception):
 
 class ValidationException(Exception):
     pass
+
+
+class FileTransferException(Exception):
+    pass

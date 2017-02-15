@@ -18,7 +18,18 @@ from __future__ import unicode_literals
 
 class BaseFileCopy(object):
 
-    def __init__(self, ctl_chan, source_file, dest_file, direction='put', file_system=None):
+    def __init__(self, napalm_conn, source_file, dest_file, direction='put', file_system=None):
+        """
+        This is the base class you will inherit from when writing your own FileCopy class. The
+        FileCopy class must support put_file() and get_file() methods. Additionally, a context
+        manager must be supported. File transfer failures should result in a FileTransferException.
+    
+        :param napalm_conn: (NAPALM object) NAPALM-driver connection used as a control-channel.
+        :param source_file: (str) Source file for transfer.
+        :param dest_file: (str) Destination file for transfer.
+        :param direction: (str) 'put' or 'get'; defaults to 'put'.
+        :param file_system: (str) Name of remote file-system, if needed.
+        """
         raise NotImplementedError
 
     def __enter__(self):
@@ -34,9 +45,25 @@ class BaseFileCopy(object):
         raise NotImplementedError
 
     def get_file(self):
+        """
+        Transfer file from remote network device to control system
+
+        Idempotent - verify whether file already exists and has correct MD5 hash.
+        Verify sufficient space exists on local device.
+
+        :raise FileTransferException: If file transfer fails.
+        """
         raise NotImplementedError
 
     def put_file(self):
+        """
+        Transfer file from control system to remote network device.
+
+        Idempotent - verify whether file already exists and has correct MD5 hash.
+        Verify sufficient space exists on remote device.
+
+        :raise FileTransferException: If file transfer fails.
+        """
         raise NotImplementedError
 
     def _remote_md5(self):
