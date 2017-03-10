@@ -27,7 +27,6 @@ import napalm_base.helpers
 import napalm_base.constants as c
 
 from napalm_base import validate
-from napalm_base import yang_helpers
 
 
 import napalm_yang  # noqa, used by the eval function
@@ -1523,37 +1522,3 @@ class NetworkDriver(object):
             return full_path
         else:
             raise IOError("Couldn't find file with mocked data: {}".format(full_path))
-
-    def parse_config(self, model):
-        model_file = model if "yaml" in model else "{}.yaml".format(model)
-        filename = self._find_yang_file(model_file, "parsers")
-
-        with open(filename, "r") as f:
-            parser_map = yaml.load(f.read())
-
-        execute = parser_map.pop("_execute")
-
-        if "cli" in execute["config"].keys():
-            config = "\n".join(self.cli(execute["config"]["cli"]).values())
-
-        model = eval(parser_map.pop("_model"))
-        yang_helpers.TextExtractor().populate(model, config, parser_map)
-        return model
-
-    def translate_model(self, obj, model):
-        model_file = model if "yaml" in model else "{}.yaml".format(model)
-        filename = self._find_yang_file(model_file, "translators")
-
-        with open(filename, "r") as f:
-            translation_map = yaml.load(f.read())
-
-        return yang_helpers.TextTranslator().translate(obj, translation_map)
-
-    def merge_model(self, candidate, running, model):
-        model_file = model if "yaml" in model else "{}.yaml".format(model)
-        filename = self._find_yang_file(model_file, "translators")
-
-        with open(filename, "r") as f:
-            translation_map = yaml.load(f.read())
-
-        return yang_helpers.TextTranslator().translate(candidate, translation_map, running)
