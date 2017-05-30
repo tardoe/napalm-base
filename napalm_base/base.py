@@ -115,6 +115,13 @@ class NetworkDriver(object):
         """
         raise NotImplementedError
 
+    def anti_idle(self):
+        """
+        Send a special character over the transport channel
+        to make sure the device doesn't drop the connection.
+        """
+        raise NotImplementedError
+
     def load_template(self, template_name, template_source=None,
                       template_path=None, **template_vars):
         """
