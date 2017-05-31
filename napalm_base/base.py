@@ -115,7 +115,7 @@ class NetworkDriver(object):
         """
         raise NotImplementedError
 
-    def anti_idle(self):
+    def session_keepalive(self):
         """
         Send a special character over the transport channel
         to make sure the device doesn't drop the connection.
