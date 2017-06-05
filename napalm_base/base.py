@@ -16,19 +16,70 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 
-# std libs
+# Import stdlib
 import sys
+import logging
+import functools
 
-# local modules
+# Import NAPALM Base
 import napalm_base.exceptions
 import napalm_base.helpers
-
 import napalm_base.constants as c
-
 from napalm_base import validate
+
+log = logging.getLogger(__file__)
+
+ERROR_MAP = {
+    'jnpr.junos.exception.ConnectClosedError': napalm_base.exceptions.ConnectionClosedException,
+    'jnpr.junos.exception.ConnectAuthError': napalm_base.exceptions.ConnectAuthError,
+    'jnpr.junos.exception.ConnectTimeoutError': napalm_base.exceptions.ConnectTimeoutError,
+    'jnpr.junos.exception.LockError': napalm_base.exceptions.LockError,
+    'jnpr.junos.exception.UnlockError': napalm_base.exceptions.UnlockError,
+    'jnpr.junos.exception.CommitError': napalm_base.exceptions.CommitError
+}
+
+
+def _raise_napalm_error(meth):
+    '''
+    Wrap a method and raise the method indicated
+    in the ERROR_MAP hashmap.
+    If there's no binding found, this will raise the initial exception.
+    '''
+    @functools.wraps(meth)
+    def fun(*args, **kwargs):
+        try:
+            return meth(*args, **kwargs)
+        except Exception as error:
+            err_name = error.__class__.__name__
+            err_mod = error.__class__.__module__
+            err_full_name = '{}.{}'.format(err_mod, err_name)
+            log.error('Raised {}'.format(err_full_name), exc_info=True)
+            if err_full_name in ERROR_MAP:
+                err_class = ERROR_MAP[err_full_name]
+                log.info('Raising {} instead'.format(err_class.__name__))
+                raise err_class(str(error))
+            # Raise everything else, using the original class.
+            raise
+    return fun
+
+
+class _NAPALMErrorCatcherMeta(type):
+    '''
+    Metaclass to wrap the driver methods using the
+    _raise_napalm_error function.
+    '''
+    def __new__(cls, name, bases, dct):
+        log.info('Setting up metaclass')
+        for meth in dct:
+            if not meth.startswith('_') and hasattr(dct[meth], '__call__'):
+                log.debug('Wrapping {}'.format(meth))
+                dct[meth] = _raise_napalm_error(dct[meth])
+        return type.__new__(cls, name, bases, dct)
 
 
 class NetworkDriver(object):
+
+    __metaclass__ = _NAPALMErrorCatcherMeta
 
     def __init__(self, hostname, username, password, timeout=60, optional_args=None):
         """
