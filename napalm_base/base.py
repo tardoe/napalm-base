@@ -60,6 +60,17 @@ def _raise_napalm_error(meth):
                 err_obj = err_class(error)
                 err_obj.original_exc = error
                 raise err_obj, None, sys.exc_info()[2]
+            elif err_name not in dir(napalm_base.exceptions) and \
+                 err_name not in __builtins__.keys():
+                log.debug('Didnt catch that, raising UncaughtException.')
+                err_msg = (
+                    'NAPALM didn\'t catch this exception. Please, fill a bugfix on'
+                    'https://github.com/napalm-automation/napalm/issues\n'
+                    'Don\'t forget to include this traceback.'
+                )
+                err_obj = napalm_base.exceptions.UncaughtException(err_msg)
+                err_obj.original_exc = error
+                raise err_obj, None, sys.exc_info()[2]
             # Raise everything else, using the original class.
             raise
     return fun
