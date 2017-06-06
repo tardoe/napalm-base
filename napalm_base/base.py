@@ -29,17 +29,8 @@ from napalm_base import validate
 
 log = logging.getLogger(__file__)
 
-ERROR_MAP = {
-    'jnpr.junos.exception.ConnectClosedError': napalm_base.exceptions.ConnectionClosedException,
-    'jnpr.junos.exception.ConnectAuthError': napalm_base.exceptions.ConnectAuthError,
-    'jnpr.junos.exception.ConnectTimeoutError': napalm_base.exceptions.ConnectTimeoutError,
-    'jnpr.junos.exception.LockError': napalm_base.exceptions.LockError,
-    'jnpr.junos.exception.UnlockError': napalm_base.exceptions.UnlockError,
-    'jnpr.junos.exception.CommitError': napalm_base.exceptions.CommitError
-}
 
-
-def _raise_napalm_error(meth):
+def _raise_napalm_error(ERROR_MAP, meth):
     '''
     Wrap a method and raise the method indicated
     in the ERROR_MAP hashmap.
@@ -64,7 +55,7 @@ def _raise_napalm_error(meth):
                  err_name not in __builtins__.keys():
                 log.debug('Didnt catch that, raising UncaughtException.')
                 err_msg = (
-                    'NAPALM didn\'t catch this exception. Please, fill a bugfix on'
+                    'NAPALM didn\'t catch this exception. Please, fill a bugfix on '
                     'https://github.com/napalm-automation/napalm/issues\n'
                     'Don\'t forget to include this traceback.'
                 )
@@ -83,10 +74,11 @@ class _NAPALMErrorCatcherMeta(type):
     '''
     def __new__(cls, name, bases, dct):
         log.info('Setting up metaclass')
+        ERROR_MAP = dct.get('ERROR_MAP', {})
         for meth in dct:
             if not meth.startswith('_') and hasattr(dct[meth], '__call__'):
                 log.debug('Wrapping {}'.format(meth))
-                dct[meth] = _raise_napalm_error(dct[meth])
+                dct[meth] = _raise_napalm_error(ERROR_MAP, dct[meth])
         return type.__new__(cls, name, bases, dct)
 
 
