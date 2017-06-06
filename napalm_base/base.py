@@ -57,7 +57,7 @@ def _raise_napalm_error(meth):
             if err_full_name in ERROR_MAP:
                 err_class = ERROR_MAP[err_full_name]
                 log.info('Raising {} instead'.format(err_class.__name__))
-                raise err_class(str(error))
+                raise err_class, error, sys.exc_info()[2]
             # Raise everything else, using the original class.
             raise
     return fun
