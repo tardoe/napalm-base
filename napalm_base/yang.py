@@ -27,16 +27,6 @@ SUPPORTED_MODELS = [
 ]
 
 
-class NapalmYangIntegration(object):
-
-    @property
-    def yang(self):
-        if not hasattr(self, "config"):
-            self.config = Yang("config", self)
-            self.state = Yang("state", self)
-        return self
-
-
 class Yang(object):
 
     def __init__(self, mode, device):

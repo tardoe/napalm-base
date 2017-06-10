@@ -29,7 +29,7 @@ import napalm_base.constants as c
 from napalm_base import validate
 
 
-class NetworkDriver(napalm_base.yang.NapalmYangIntegration):
+class NetworkDriver(object):
 
     def __init__(self, hostname, username, password, timeout=60, optional_args=None):
         """
@@ -93,6 +93,13 @@ class NetworkDriver(napalm_base.yang.NapalmYangIntegration):
             print(epilog)
         # Traceback should already be attached to exception; no need to re-attach
         raise exc_value
+
+    @property
+    def yang(self):
+        if not hasattr(self, "config"):
+            self.config = napalm_base.yang.Yang("config", self)
+            self.state = napalm_base.yang.Yang("state", self)
+        return self
 
     def open(self):
         """
