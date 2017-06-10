@@ -22,13 +22,14 @@ import sys
 # local modules
 import napalm_base.exceptions
 import napalm_base.helpers
+import napalm_base.yang
 
 import napalm_base.constants as c
 
 from napalm_base import validate
 
 
-class NetworkDriver(object):
+class NetworkDriver(napalm_base.yang.NapalmYangIntegration):
 
     def __init__(self, hostname, username, password, timeout=60, optional_args=None):
         """
