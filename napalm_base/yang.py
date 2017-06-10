@@ -20,11 +20,12 @@ import napalm_yang
 
 
 # TODO this should come from napalm-yang
-# TODO we probably need to adapt the validate framework as well
 SUPPORTED_MODELS = [
     "openconfig-interfaces",
     "openconfig-network-instance",
 ]
+
+# TODO we probably need to adapt the validate framework as well
 
 
 class Yang(object):
@@ -38,6 +39,8 @@ class Yang(object):
             self.device.candidate = napalm_yang.base.Root()
 
         for model in SUPPORTED_MODELS:
+            # We are going to dynamically attach a getter for each
+            # supported YANG model.
             model = model.replace("-", "_")
             funcname = "get_{}".format(model)
             setattr(Yang, funcname, yang_get_wrapper(model))
@@ -60,8 +63,13 @@ class Yang(object):
 
 
 def yang_get_wrapper(model):
-    def method(self, **kwargs):
+    """
+    This method basically implements the getter for YANG models.
 
+    The method abstracts loading the model into the root objects (candidate
+    and running) and calls the parsers.
+    """
+    def method(self, **kwargs):
         # This is the class for the model
         modelobj = getattr(napalm_yang.models, model)()
 
