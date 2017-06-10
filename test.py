@@ -35,7 +35,7 @@ print("-------------")
 
 
 print("# Change a description")
-eos_device.candidate.interfaces.interface["Ethernet1"].config.description = "This is a new description"
+eos_device.candidate.interfaces.interface["Ethernet1"].config.description = "This is a new description"  # noqa
 pretty_print(eos_device.config.diff())
 print("-------------")
 
