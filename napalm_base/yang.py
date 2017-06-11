@@ -38,6 +38,8 @@ class Yang(object):
             module_name = model[0].replace("-", "_")
             funcname = "get_{}".format(module_name)
             setattr(Yang, funcname, yang_get_wrapper(module_name))
+            funcname = "model_{}".format(module_name)
+            setattr(Yang, funcname, yang_model_wrapper(module_name))
 
     def translate(self, merge=False, replace=False, profile=None):
         if profile is None:
@@ -92,5 +94,22 @@ def yang_get_wrapper(module):
         # of the parsed model
         f = kwargs.get("filter", True)
         return {a._yang_name: a.get(filter=f) for a in running_attrs}
+
+    return method
+
+
+def yang_model_wrapper(module):
+    """
+    This method basically implements the getter for YANG models.
+
+    The method abstracts loading the model into the root objects (candidate
+    and running) and calls the parsers.
+    """
+    module = getattr(napalm_yang.models, module)
+
+    def method(self, **kwargs):
+        root = napalm_yang.base.Root()
+        root.add_model(module)
+        return napalm_yang.utils.model_to_dict(root, self._mode)
 
     return method

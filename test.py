@@ -19,7 +19,7 @@ eos_device = eos(**eos_configuration)
 
 eos_device.open()
 pretty_print(eos_device.yang.config.get_openconfig_interfaces(candidate=True))
-#  print(eos_device.yang.config.get_openconfig_network_instance())
+print(eos_device.yang.config.get_openconfig_network_instance())
 
 print("# Raw translation")
 print(eos_device.yang.config.translate())
@@ -29,7 +29,7 @@ print("# Merge without changes, should be empty")
 print(eos_device.yang.config.translate(merge=True))
 print("-------------")
 
-print("# Replace without changes, should be empty")
+print("# Replace without changes")
 print(eos_device.yang.config.translate(replace=True))
 print("-------------")
 
@@ -40,7 +40,8 @@ pretty_print(eos_device.config.diff())
 print("-------------")
 
 print("# Merge change")
-print(eos_device.yang.config.translate(merge=True))
+merge_config = eos_device.yang.config.translate(merge=True)
+print(merge_config)
 print("-------------")
 
 print("# Replace change")
@@ -54,4 +55,14 @@ print(eos_device.compare_config())
 eos_device.discard_config()
 print("-------------")
 
+print("# Let's merge the current interfaces configuration from the device")
+eos_device.load_merge_candidate(config=merge_config)
+print(eos_device.compare_config())
+eos_device.discard_config()
+print("-------------")
+
 eos_device.close()
+
+print("# For reference, you can also print the model for both the config and the state parts of the model")  # noqa
+pretty_print(eos_device.yang.config.model_openconfig_vlan())
+pretty_print(eos_device.yang.state.model_openconfig_vlan())
