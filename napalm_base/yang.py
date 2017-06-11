@@ -35,9 +35,9 @@ class Yang(object):
         for model in napalm_yang.SUPPORTED_MODELS:
             # We are going to dynamically attach a getter for each
             # supported YANG model.
-            model_name = model[0].replace("-", "_")
-            funcname = "get_{}".format(model_name)
-            setattr(Yang, funcname, yang_get_wrapper(model_name))
+            module_name = model[0].replace("-", "_")
+            funcname = "get_{}".format(module_name)
+            setattr(Yang, funcname, yang_get_wrapper(module_name))
 
     def translate(self, merge=False, replace=False, profile=None):
         if profile is None:
@@ -56,42 +56,41 @@ class Yang(object):
         return napalm_yang.utils.diff(self.device.candidate, self.device.running)
 
 
-def yang_get_wrapper(model):
+def yang_get_wrapper(module):
     """
     This method basically implements the getter for YANG models.
 
     The method abstracts loading the model into the root objects (candidate
     and running) and calls the parsers.
     """
+    module = getattr(napalm_yang.models, module)
+
     def method(self, **kwargs):
         # This is the class for the model
-        modelobj = getattr(napalm_yang.models, model)()
+        instance = module()
 
         # We attach it to the running object
-        self.device.running.add_model(modelobj)
-
-        # We extract the attribute assigned to the running object
-        # for example, device.running.interfaces
-        modelattr = getattr(self.device.running, modelobj.elements().keys()[0])
+        self.device.running.add_model(instance)
 
         # We get the correct method (parse_config or parse_state)
         parsefunc = getattr(self.device.running, "parse_{}".format(self._mode))
 
         # We parse *only* the model that corresponds to this call
-        parsefunc(device=self.device, attrs=[modelattr])
+        running_attrs = [getattr(self.device.running, a) for a in instance.elements().keys()]
+        parsefunc(device=self.device, attrs=running_attrs)
 
         # If we are in configuration mode and the user requests it
         # we create a candidate as well
         if kwargs.pop("candidate"):
-            modelobj = getattr(napalm_yang.models, model)()
-            self.device.candidate.add_model(modelobj)
-            modelattr = getattr(self.device.candidate, modelobj.elements().keys()[0])
+            instance = module()
+            self.device.candidate.add_model(instance)
             parsefunc = getattr(self.device.candidate, "parse_{}".format(self._mode))
-            parsefunc(device=self.device, attrs=[modelattr])
+            attrs = [getattr(self.device.candidate, a) for a in instance.elements().keys()]
+            parsefunc(device=self.device, attrs=attrs)
 
         # In addition to populate the running object, we return a dict with the contents
         # of the parsed model
         f = kwargs.get("filter", True)
-        return modelattr.get(filter=f)
+        return {a._yang_name: a.get(filter=f) for a in running_attrs}
 
     return method
