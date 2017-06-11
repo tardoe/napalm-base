@@ -19,12 +19,6 @@ from __future__ import unicode_literals
 import napalm_yang
 
 
-# TODO this should come from napalm-yang
-SUPPORTED_MODELS = [
-    "openconfig-interfaces",
-    "openconfig-network-instance",
-]
-
 # TODO we probably need to adapt the validate framework as well
 
 
@@ -38,12 +32,12 @@ class Yang(object):
         if mode == "config":
             self.device.candidate = napalm_yang.base.Root()
 
-        for model in SUPPORTED_MODELS:
+        for model in napalm_yang.SUPPORTED_MODELS:
             # We are going to dynamically attach a getter for each
             # supported YANG model.
-            model = model.replace("-", "_")
-            funcname = "get_{}".format(model)
-            setattr(Yang, funcname, yang_get_wrapper(model))
+            model_name = model[0].replace("-", "_")
+            funcname = "get_{}".format(model_name)
+            setattr(Yang, funcname, yang_get_wrapper(model_name))
 
     def translate(self, merge=False, replace=False, profile=None):
         if profile is None:
