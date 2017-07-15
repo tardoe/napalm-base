@@ -4,6 +4,25 @@ import re
 
 
 def parse_indented_config(config, current_indent=0, previous_indent=0, nested=False):
+    """
+    This methid basically reads a configuration that conforms to a very poor industry standard
+    and returns a nested structure that behaves like a dict. For example:
+
+        {'enable password whatever': {},
+         'interface GigabitEthernet1': {
+             'description "bleh"': {},
+             'fake nested': {
+                 'nested nested configuration': {}},
+             'switchport mode trunk': {}},
+         'interface GigabitEthernet2': {
+             'no ip address': {}},
+         'interface GigabitEthernet3': {
+             'negotiation auto': {},
+             'no ip address': {},
+             'shutdown': {}},
+         'interface Loopback0': {
+             'description "blah"': {}}}
+    """
     parsed = IndentedConfig()
     while True:
         if not config:
@@ -31,6 +50,12 @@ def parse_indented_config(config, current_indent=0, previous_indent=0, nested=Fa
 
 
 def _can_have_multiple(command):
+    """
+    This method returns true if a command can have multiple instances of itself.
+    For example; interface Fa0, interface Fa1, neighor 1.1.1.1, neighbor 1.1.1.2, etc.
+
+    It is important this is up to date or the diff might fail to detect changes properly.
+    """
     EXACT_MATCHES = [
         "interface",
         "router",
@@ -46,6 +71,9 @@ def _can_have_multiple(command):
 
 
 def _expand(d, action, indent):
+    """
+    Returns a list of (action, subcommand)
+    """
     result = []
     for k, v in d.items():
         k = "{}{}".format(" " * indent * 2, k)
@@ -55,11 +83,15 @@ def _expand(d, action, indent):
 
 
 def merge(running, candidate, negators, indent=0):
+    """
+    This method reads a running and a candidate config and returns a list of
+    (action, command) that are needed to converge.
+    """
     result = []
     for command, subcommands in candidate.items():
         if any([command.startswith(n) for n in negators]):
             ncmd = " ".join(command.split(" ")[1:])
-            remove = running.find(ncmd, exact=_can_have_multiple(ncmd))
+            remove = running.find(ncmd)
             for r in remove:
                 result.append(("remove", "{}{}".format(" " * indent * 2, r)))
                 result += _expand(running[r], "remove", indent+1)
@@ -72,7 +104,7 @@ def merge(running, candidate, negators, indent=0):
             result.append(("add", "{}{}".format(" " * indent * 2, command)))
             result += _expand(subcommands, "add", indent+1)
 
-            remove = running.find(command, exact=_can_have_multiple(command))
+            remove = running.find(command)
             for r in remove:
                 result.append(("remove", "{}{}".format(" " * indent * 2, r)))
                 result += _expand(running[r], "remove", indent+1)
@@ -121,14 +153,31 @@ class IndentedConfig(object):
                 result[k] = {}
         return result
 
-    def find(self, command, exact):
-        if not exact:
+    def find(self, command):
+        """
+        Find commands in self that look like command.
+
+        This method relies on _can_have_multiple. When working properly it lets you do things like:
+
+            1. If you do `switchport mode trunk` and try to find it with _can_have_multiple
+                returning False, you would be able to match on `switchport mode access` as well,
+                which will allow you to realize you are changing one by the other.
+            2. Similarly as above, you can run `switchport trunk vlan 1,2,3,5` and realize you
+                are changing the existing command `switchport trunk vlan 1,2`.
+            3. You can also do `no neighbor 1.1.1.1` and match if _can_have_multiple is True, all
+                the commands you may have like `neighbor 1.1.1.1 remote-as 12345`,
+                `neighbor 1.1.1.1 route-map blah in` while not matching at all other neighbors.
+        """
+        if not _can_have_multiple(command):
             cmd = " ".join(command.split(" ")[0:-1])
             command = cmd if cmd else command
         regex = re.compile("^{}.*".format(command))
         return [c for c in self.keys() if regex.match(c)]
 
     def diff(self, candidate):
+        """
+        Returns the diff of the configuration when applying the candidate on top of self.
+        """
         if isinstance(candidate, py23_compat.string_types):
             candidate = IndentedConfig(candidate)
         result = merge(self, candidate, self.negators)
