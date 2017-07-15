@@ -13,6 +13,7 @@ driver = get_network_driver("mock")
 
 test_cases_differ = [
     "test_case_1",
+    "test_case_2",
 ]
 
 
@@ -79,4 +80,4 @@ interface GigabitEthernet3
             expected = f.read()
 
         diff = indent_differ.IndentedConfig(running).diff(candidate)
-        assert diff.strip() == expected.strip()
+        assert diff.strip() == expected.strip(), diff
