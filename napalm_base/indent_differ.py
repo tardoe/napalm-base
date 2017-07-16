@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 from napalm_base.utils import py23_compat
 
 import re
@@ -123,7 +125,7 @@ class IndentedConfig(object):
                                if line.strip() and not line.startswith(comments)]
             self.parsed = parse_indented_config(lines_no_blanks)
         else:
-            self.parsed = {}
+            self.parsed = OrderedDict()
         self.negators = negators
 
     def items(self):
@@ -150,7 +152,7 @@ class IndentedConfig(object):
             if v:
                 result[k] = v.to_dict()
             else:
-                result[k] = {}
+                result[k] = OrderedDict()
         return result
 
     def find(self, command):
