@@ -15,6 +15,7 @@ test_cases_differ = [
     "test_case_1",
     "test_case_2",
     "test_case_3",
+    "test_snmp_server",
 ]
 
 
