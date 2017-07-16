@@ -14,6 +14,7 @@ driver = get_network_driver("mock")
 test_cases_differ = [
     "test_case_1",
     "test_case_2",
+    "test_snmp_server",
 ]
 
 
