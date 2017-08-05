@@ -19,6 +19,7 @@ from __future__ import unicode_literals
 from napalm_base.base import NetworkDriver
 import napalm_base.exceptions
 
+import ast
 import inspect
 import json
 import os
@@ -101,6 +102,10 @@ def mocked_data(path, name, count):
 
     if "exception" in result:
         raise_exception(result)
+    elif "plain_text" in result:
+        return result["plain_text"]
+    elif "direct_value" in result:
+        return ast.literal_eval(result["direct_value"])
     else:
         return result
 
