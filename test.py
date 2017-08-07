@@ -67,9 +67,9 @@ pprint.pprint(d.get_interfaces())
 
 eos_configuration = {
     'hostname': '127.0.0.1',
-    'username': 'vagrant',
-    'password': 'vagrant',
-    'optional_args': {'port': 12443,
+    'username': 'fake',
+    'password': 'wrong',
+    'optional_args': {'port': 123,
                       'recorder_mode': "replay",
                       'recorder_path': "./test_recorder"}
 }
