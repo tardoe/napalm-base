@@ -2,9 +2,14 @@ from functools import wraps
 
 from collections import defaultdict
 
+from datetime import datetime
+
+import pip
 import logging
 import os
 import pickle
+import yaml
+
 
 logger = logging.getLogger("napalm-base")
 
@@ -56,6 +61,20 @@ class Recorder(object):
 
         self.device = cls(*args, **kwargs)
         self.calls = defaultdict(lambda: 1)
+
+        if self.mode == "record":
+            self.stamp_metadata()
+
+    def stamp_metadata(self):
+        dt = datetime.now()
+
+        installed_packages = pip.get_installed_distributions()
+        napalm_packages = sorted(["{}=={}".format(i.key, i.version)
+                                  for i in installed_packages if i.key.startswith("napalm")])
+
+        with open("{}/metadata.yaml".format(self.path), "w") as f:
+            f.write(yaml.dump({"date": dt, "napalm_version": napalm_packages},
+                              default_flow_style=False))
 
     def __getattr__(self, attr):
         return recorder(self)(self.device.__getattribute__(attr))
