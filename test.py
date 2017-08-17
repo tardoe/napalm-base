@@ -29,12 +29,12 @@ eos_configuration = {
     'optional_args': {'port': 12443}
 }
 
-eos = get_network_driver("eos")
-d = eos(**eos_configuration)
+#  eos = get_network_driver("eos")
+#  d = eos(**eos_configuration)
 
-d.open()
-pprint.pprint(d.get_facts())
-pprint.pprint(d.get_interfaces())
+#  d.open()
+#  pprint.pprint(d.get_facts())
+#  pprint.pprint(d.get_interfaces())
 
 
 ##########################################################################
@@ -57,6 +57,14 @@ d = eos(**eos_configuration)
 d.open()
 pprint.pprint(d.get_facts())
 pprint.pprint(d.get_interfaces())
+pprint.pprint(d.cli(["show version"]))
+
+#  pprint.pprint(d.cli(["wrong command"]))
+try:
+    pprint.pprint(d.cli(["wrong command"]))
+except Exception as e:
+    print("Recording exception")
+    print(e)
 
 
 ##########################################################################
@@ -80,3 +88,5 @@ d = eos(**eos_configuration)
 d.open()
 pprint.pprint(d.get_facts())
 pprint.pprint(d.get_interfaces())
+pprint.pprint(d.cli(["show version"]))
+pprint.pprint(d.cli(["wrong command"]))

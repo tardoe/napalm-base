@@ -4,14 +4,41 @@ from collections import defaultdict
 
 from datetime import datetime
 
+from napalm_base.utils import py23_compat
+
 import pip
 import logging
 import os
-import pickle
-import yaml
 
+from camel import Camel, CamelRegistry
 
 logger = logging.getLogger("napalm-base")
+
+camel_registry = CamelRegistry()
+camel = Camel([camel_registry])
+
+
+try:
+    from pyeapi.eapilib import CommandError as pyeapiCommandError
+
+    @camel_registry.dumper(pyeapiCommandError, 'pyeapiCommandError', version=1)
+    def _dump_pyeapiCommandError(e):
+        return {
+            "code": e.error_code,
+            "message": e.error_text,
+            "kwargs": {
+                "command_error": e.command_error,
+                "commands": e.commands,
+                "output": e.output,
+            },
+        }
+
+    @camel_registry.loader('pyeapiCommandError', version=1)
+    def _load_pyeapiCommandError(data, version):
+        return pyeapiCommandError(data["code"], data["message"], **data["kwargs"])
+except Exception:
+    # If we can't import pyeapi there is no point on adding serializer/deserializer
+    pass
 
 
 # This is written as a decorator so it can be used independently
@@ -26,7 +53,7 @@ def recorder(cls):
             cls.calls[func.__name__] += 1
 
             if cls.mode == "record":
-                return record(cls, func, *args, **kwargs)
+                return record(cls, cls.record_exceptions, func, *args, **kwargs)
             elif cls.mode == "replay":
                 return replay(cls, func, *args, **kwargs)
 
@@ -34,20 +61,36 @@ def recorder(cls):
     return real_decorator
 
 
-def record(cls, func, *args, **kwargs):
+def record(cls, exception_valid, func, *args, **kwargs):
     logger.debug("Recording {}".format(func.__name__))
-    r = func(*args, **kwargs)
-    filename = "{}.{}".format(func.__name__, cls.current_count)
+
+    try:
+        r = func(*args, **kwargs)
+        raised_exception = False
+    except Exception as e:
+        if not exception_valid:
+            raise e
+        raised_exception = True
+        r = e
+
+    filename = "{}.{}.yaml".format(func.__name__, cls.current_count)
     with open(os.path.join(cls.path, filename), 'w') as f:
-        f.write(pickle.dumps(r))
-    return r
+        f.write(camel.dump(r))
+
+    if raised_exception:
+        raise r
+    else:
+        return r
 
 
 def replay(cls, func, *args, **kwargs):
     logger.debug("Replaying {}".format(func.__name__))
-    filename = "{}.{}".format(func.__name__, cls.current_count)
+    filename = "{}.{}.yaml".format(func.__name__, cls.current_count)
     with open(os.path.join(cls.path, filename), 'r') as f:
-        r = pickle.load(f)
+        r = camel.load(py23_compat.text_type(f.read()))
+
+    if isinstance(r, Exception):
+        raise r
     return r
 
 
@@ -58,6 +101,7 @@ class Recorder(object):
 
         self.mode = recorder_options.get("mode", "pass")
         self.path = recorder_options.get("path", "")
+        self.record_exceptions = recorder_options.get("record_exceptions", True)
 
         self.device = cls(*args, **kwargs)
         self.calls = defaultdict(lambda: 1)
@@ -73,8 +117,7 @@ class Recorder(object):
                                   for i in installed_packages if i.key.startswith("napalm")])
 
         with open("{}/metadata.yaml".format(self.path), "w") as f:
-            f.write(yaml.dump({"date": dt, "napalm_version": napalm_packages},
-                              default_flow_style=False))
+            f.write(camel.dump({"date": dt, "napalm_version": napalm_packages}))
 
     def __getattr__(self, attr):
         return recorder(self)(self.device.__getattribute__(attr))

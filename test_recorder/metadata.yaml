@@ -1,15 +1,31 @@
-date: 2017-08-16 19:57:11.194889
-napalm_version:
-- napalm-ansible==0.7.0
-- napalm-base==0.24.3
-- napalm-eos==0.6.0
-- napalm-fortios==0.4.0
-- napalm-ios==0.7.0
-- napalm-iosxr==0.5.4
-- napalm-junos==0.12.0
-- napalm-nxos==0.6.0
-- napalm-panos==0.4.0
-- napalm-pluribus==0.5.1
-- napalm-ros==0.2.2
-- napalm-vyos==0.1.3
-- napalm==1.2.0
+? !!binary |
+  ZGF0ZQ==
+: 2017-08-17 12:57:21.126842
+? !!binary |
+  bmFwYWxtX3ZlcnNpb24=
+: - !!binary |
+    bmFwYWxtLWFuc2libGU9PTAuNy4w
+  - !!binary |
+    bmFwYWxtLWJhc2U9PTAuMjQuMw==
+  - !!binary |
+    bmFwYWxtLWVvcz09MC42LjA=
+  - !!binary |
+    bmFwYWxtLWZvcnRpb3M9PTAuNC4w
+  - !!binary |
+    bmFwYWxtLWlvcz09MC43LjA=
+  - !!binary |
+    bmFwYWxtLWlvc3hyPT0wLjUuNA==
+  - !!binary |
+    bmFwYWxtLWp1bm9zPT0wLjEyLjA=
+  - !!binary |
+    bmFwYWxtLW54b3M9PTAuNi4w
+  - !!binary |
+    bmFwYWxtLXBhbm9zPT0wLjQuMA==
+  - !!binary |
+    bmFwYWxtLXBsdXJpYnVzPT0wLjUuMQ==
+  - !!binary |
+    bmFwYWxtLXJvcz09MC4yLjI=
+  - !!binary |
+    bmFwYWxtLXZ5b3M9PTAuMS4z
+  - !!binary |
+    bmFwYWxtPT0xLjIuMA==
