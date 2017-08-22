@@ -188,10 +188,7 @@ class MockDriver(NetworkDriver):
 
     def _rpc(self, get):
         """This one is only useful for junos."""
-        if "junos" in self.profile:
-            return list(self.cli([get]).values())[0]
-        else:
-            raise AttributeError("MockedDriver instance has not attribute '_rpc'")
+        return list(self.cli([get]).values())[0]
 
     def __getattribute__(self, name):
         if is_mocked_method(name):
