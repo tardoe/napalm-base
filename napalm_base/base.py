@@ -16,9 +16,6 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 
-# std libs
-import sys
-
 # local modules
 import napalm_base.exceptions
 import napalm_base.helpers
@@ -47,17 +44,19 @@ class NetworkDriver(object):
         raise NotImplementedError
 
     def __enter__(self):
-        try:
-            self.open()
-        except Exception:  # noqa
-            exc_info = sys.exc_info()
-            return self.__raise_clean_exception(exc_info[0], exc_info[1], exc_info[2])
+        self.open()
         return self
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         self.close()
-        if exc_type is not None:
-            return self.__raise_clean_exception(exc_type, exc_value, exc_traceback)
+        if exc_type is not None and (
+                            exc_type.__name__ not in dir(napalm_base.exceptions) and
+                            exc_type.__name__ not in __builtins__.keys()):
+            epilog = ("NAPALM didn't catch this exception. Please, fill a bugfix on "
+                      "https://github.com/napalm-automation/napalm/issues\n"
+                      "Don't forget to include this traceback.")
+            print(epilog)
+            return False
 
     def __del__(self):
         """
@@ -70,27 +69,6 @@ class NetworkDriver(object):
                 self.close()
         except Exception:
             pass
-
-    @staticmethod
-    def __raise_clean_exception(exc_type, exc_value, exc_traceback):
-        """
-        This method is going to check if the exception exc_type is part of the builtins exceptions
-        or part of the napalm exceptions. If it is not, it will print a message on the screen
-        giving instructions to fill a bug.
-
-        Finally it will raise the original exception.
-
-        :param exc_type: Exception class.
-        :param exc_value: Exception object.
-        :param exc_traceback: Traceback.
-        """
-        if (exc_type.__name__ not in dir(napalm_base.exceptions) and
-                exc_type.__name__ not in __builtins__.keys()):
-            epilog = ("NAPALM didn't catch this exception. Please, fill a bugfix on "
-                      "https://github.com/napalm-automation/napalm/issues\n"
-                      "Don't forget to include this traceback.")
-            print(epilog)
-        return False
 
     def open(self):
         """
@@ -111,6 +89,30 @@ class NetworkDriver(object):
         The state does not reflect only on the connection status (when SSH), it must also take into
         consideration other parameters, e.g.: NETCONF session might not be usable, althought the
         underlying SSH session is still open etc.
+        """
+        raise NotImplementedError
+
+    def pre_connection_tests(self):
+        """
+        This is a helper function used by the cli tool cl_napalm_show_tech. Drivers
+        can override this method to do some tests, show information, enable debugging, etc.
+        before a connection with the device is attempted.
+        """
+        raise NotImplementedError
+
+    def connection_tests(self):
+        """
+        This is a helper function used by the cli tool cl_napalm_show_tech. Drivers
+        can override this method to do some tests, show information, enable debugging, etc.
+        before a connection with the device has been successful.
+        """
+        raise NotImplementedError
+
+    def post_connection_tests(self):
+        """
+        This is a helper function used by the cli tool cl_napalm_show_tech. Drivers
+        can override this method to do some tests, show information, enable debugging, etc.
+        after a connection with the device has been closed successfully.
         """
         raise NotImplementedError
 
@@ -1542,6 +1544,6 @@ class NetworkDriver(object):
         Return a compliance report.
 
         Verify that the device complies with the given validation file and writes a compliance
-        report file. See https://napalm.readthedocs.io/en/latest/validate.html.
+        report file. See https://napalm.readthedocs.io/en/latest/validate/index.html.
         """
         return validate.compliance_report(self, validation_file=validation_file)

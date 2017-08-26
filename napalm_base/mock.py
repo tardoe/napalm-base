@@ -88,7 +88,7 @@ class MockDevice(object):
     def run_commands(self, commands):
         """Only useful for EOS"""
         if "eos" in self.profile:
-            return self.parent.cli(commands).values()[0]
+            return list(self.parent.cli(commands).values())[0]
         else:
             raise AttributeError("MockedDriver instance has not attribute '_rpc'")
 
@@ -106,6 +106,7 @@ class MockDriver(NetworkDriver):
         self.password = password
         self.path = optional_args["path"]
         self.profile = optional_args.get("profile", [])
+        self.fail_on_open = optional_args.get("fail_on_open", False)
 
         self.opened = False
         self.calls = {}
@@ -126,6 +127,8 @@ class MockDriver(NetworkDriver):
             raise napalm_base.exceptions.ConnectionClosedException("connection closed")
 
     def open(self):
+        if self.fail_on_open:
+            raise napalm_base.exceptions.ConnectionException("You told me to do this")
         self.opened = True
 
     def close(self):
@@ -185,10 +188,7 @@ class MockDriver(NetworkDriver):
 
     def _rpc(self, get):
         """This one is only useful for junos."""
-        if "junos" in self.profile:
-            return self.cli([get]).values()[0]
-        else:
-            raise AttributeError("MockedDriver instance has not attribute '_rpc'")
+        return list(self.cli([get]).values())[0]
 
     def __getattribute__(self, name):
         if is_mocked_method(name):
