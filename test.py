@@ -18,34 +18,34 @@ eos = get_network_driver("eos")
 eos_device = eos(**eos_configuration)
 
 eos_device.open()
-pretty_print(eos_device.yang.config.get_openconfig_interfaces(candidate=True))
-print(eos_device.yang.config.get_openconfig_network_instance())
+pretty_print(eos_device.yang.get_openconfig_interfaces(candidate=True))
+print(eos_device.yang.get_openconfig_network_instance())
 
 print("# Raw translation")
-print(eos_device.yang.config.translate())
+print(eos_device.yang.translate())
 print("-------------")
 
 print("# Merge without changes, should be empty")
-print(eos_device.yang.config.translate(merge=True))
+print(eos_device.yang.translate(merge=True))
 print("-------------")
 
 print("# Replace without changes")
-print(eos_device.yang.config.translate(replace=True))
+print(eos_device.yang.translate(replace=True))
 print("-------------")
 
 
 print("# Change a description")
 eos_device.candidate.interfaces.interface["Ethernet1"].config.description = "This is a new description"  # noqa
-pretty_print(eos_device.config.diff())
+pretty_print(eos_device.yang.diff())
 print("-------------")
 
 print("# Merge change")
-merge_config = eos_device.yang.config.translate(merge=True)
+merge_config = eos_device.yang.translate(merge=True)
 print(merge_config)
 print("-------------")
 
 print("# Replace change")
-replace_config = eos_device.yang.config.translate(replace=True)
+replace_config = eos_device.yang.translate(replace=True)
 print(replace_config)
 print("-------------")
 
@@ -64,5 +64,5 @@ print("-------------")
 eos_device.close()
 
 print("# For reference, you can also print the model for both the config and the state parts of the model")  # noqa
-pretty_print(eos_device.yang.config.model_openconfig_vlan())
-pretty_print(eos_device.yang.state.model_openconfig_vlan())
+pretty_print(eos_device.yang.model_openconfig_vlan())
+pretty_print(eos_device.yang.model_openconfig_vlan(data="state"))

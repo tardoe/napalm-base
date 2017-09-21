@@ -24,13 +24,10 @@ import napalm_yang
 
 class Yang(object):
 
-    def __init__(self, mode, device):
-        self._mode = mode
+    def __init__(self, device):
         self.device = device
         self.device.running = napalm_yang.base.Root()
-
-        if mode == "config":
-            self.device.candidate = napalm_yang.base.Root()
+        self.device.candidate = napalm_yang.base.Root()
 
         for model in napalm_yang.SUPPORTED_MODELS:
             # We are going to dynamically attach a getter for each
@@ -67,7 +64,7 @@ def yang_get_wrapper(module):
     """
     module = getattr(napalm_yang.models, module)
 
-    def method(self, **kwargs):
+    def method(self, data="config", candidate=False, filter=True):
         # This is the class for the model
         instance = module()
 
@@ -75,7 +72,7 @@ def yang_get_wrapper(module):
         self.device.running.add_model(instance)
 
         # We get the correct method (parse_config or parse_state)
-        parsefunc = getattr(self.device.running, "parse_{}".format(self._mode))
+        parsefunc = getattr(self.device.running, "parse_{}".format(data))
 
         # We parse *only* the model that corresponds to this call
         running_attrs = [getattr(self.device.running, a) for a in instance.elements().keys()]
@@ -83,17 +80,18 @@ def yang_get_wrapper(module):
 
         # If we are in configuration mode and the user requests it
         # we create a candidate as well
-        if kwargs.pop("candidate"):
+        if candidate:
             instance = module()
             self.device.candidate.add_model(instance)
-            parsefunc = getattr(self.device.candidate, "parse_{}".format(self._mode))
+            import pdb
+            pdb.set_trace()
+            parsefunc = getattr(self.device.candidate, "parse_{}".format(data))
             attrs = [getattr(self.device.candidate, a) for a in instance.elements().keys()]
             parsefunc(device=self.device, attrs=attrs)
 
         # In addition to populate the running object, we return a dict with the contents
         # of the parsed model
-        f = kwargs.get("filter", True)
-        return {a._yang_name: a.get(filter=f) for a in running_attrs}
+        return {a._yang_name: a.get(filter=filter) for a in running_attrs}
 
     return method
 
@@ -107,9 +105,9 @@ def yang_model_wrapper(module):
     """
     module = getattr(napalm_yang.models, module)
 
-    def method(self, **kwargs):
+    def method(self, data="config"):
         root = napalm_yang.base.Root()
         root.add_model(module)
-        return napalm_yang.utils.model_to_dict(root, self._mode)
+        return napalm_yang.utils.model_to_dict(root, data)
 
     return method

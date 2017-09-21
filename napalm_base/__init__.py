@@ -35,7 +35,9 @@ except AttributeError:
 # NAPALM base
 from napalm_base.base import NetworkDriver
 from napalm_base.exceptions import ModuleImportError
+from napalm_base.mock import MockDriver
 from napalm_base.utils import py23_compat
+from napalm_base import yang
 
 try:
     __version__ = pkg_resources.get_distribution('napalm-base').version
@@ -45,11 +47,12 @@ except pkg_resources.DistributionNotFound:
 
 __all__ = [
     'get_network_driver',  # export the function
-    'NetworkDriver'  # also export the base class
+    'NetworkDriver',  # also export the base class
+    'yang',
 ]
 
 
-def get_network_driver(module_name):
+def get_network_driver(module_name, prepend=True):
     """
     Searches for a class derived form the base NAPALM class NetworkDriver in a specific library.
     The library name must repect the following pattern: napalm_[DEVICE_OS].
@@ -81,6 +84,8 @@ def get_network_driver(module_name):
         napalm_base.exceptions.ModuleImportError: Cannot import "napalm_wrong". Is the library \
         installed?
     """
+    if module_name == "mock":
+        return MockDriver
 
     if not (isinstance(module_name, py23_compat.string_types) and len(module_name) > 0):
         raise ModuleImportError('Please provide a valid driver name.')
@@ -91,7 +96,7 @@ def get_network_driver(module_name):
         # Try to not raise error when users requests IOS-XR for e.g.
         module_install_name = module_name.replace('-', '')
         # Can also request using napalm_[SOMETHING]
-        if 'napalm_' not in module_install_name:
+        if 'napalm_' not in module_install_name and prepend is True:
             module_install_name = 'napalm_{name}'.format(name=module_install_name)
         module = importlib.import_module(module_install_name)
     except ImportError:
