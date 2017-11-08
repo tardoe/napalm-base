@@ -38,7 +38,7 @@ try:
     import napalm
     HAS_NAPALM = True
     try:
-        NAPALM_MAJOR = napalm.__version__.split('.')[0]
+        NAPALM_MAJOR = int(napalm.__version__.split('.')[0])
     except AttributeError:
         NAPALM_MAJOR = 0
 except ImportError:
