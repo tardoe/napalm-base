@@ -22,9 +22,6 @@ from __future__ import unicode_literals
 import sys
 import pkg_resources
 
-# Import local modules
-from napalm_base.base import NetworkDriver
-
 # Verify Python Version that is running
 try:
     if not(sys.version_info.major == 2 and sys.version_info.minor == 7) and \
@@ -53,6 +50,7 @@ except pkg_resources.DistributionNotFound:
 if HAS_NAPALM and NAPALM_MAJOR >= 2:
     # If napalm >= 2.0.0 is installed, then import get_network_driver
     from napalm import get_network_driver
+    from napalm.base import NetworkDriver
 else:
     # Import std lib
     import inspect
@@ -62,6 +60,7 @@ else:
     from napalm_base.exceptions import ModuleImportError
     from napalm_base.mock import MockDriver
     from napalm_base.utils import py23_compat
+    from napalm_base.base import NetworkDriver
 
     def get_network_driver(module_name, prepend=True):
         """
